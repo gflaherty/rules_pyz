@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # Copyright 2017 The Bazel Authors. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,10 +23,13 @@ import os
 import pkg_resources
 from pkg_resources._vendor.packaging import markers
 import re
-import rfc822
 import sys
 import zipfile
 
+try:
+  basestring
+except NameError:
+  basestring = str
 
 def recurse_split_extra(parsed_parts):
   extra = ''
@@ -186,16 +189,25 @@ class Wheel(object):
   def _parse_metadata(self, file_object):
     # the METADATA file is in PKG-INFO format, which is a sequence of RFC822 headers:
     # https://www.python.org/dev/peps/pep-0241/
-    message = rfc822.Message(file_object)
 
     # Requires-Dist format:
     # https://packaging.python.org/specifications/core-metadata/#requires-dist-multiple-use
+    try:
+        specifications = []
+        import rfc822
+        message = rfc822.Message(file_object)
+        for header in message.getallmatchingheaders('Requires-Dist'):
+            header_parts = header.strip().split(':', 2)
+            specifications.append(header_parts[1].strip())
+    except ImportError:
+        # Use the email module if rfc822 does not exist (It was removed in Python3)
+        import email
+        message =  email.parser.BytesParser().parse(file_object)
+        specifications = message.get_all('Requires-Dist') or []
+
     requires_extra = {}
     extras = set()
-    for header in message.getallmatchingheaders('Requires-Dist'):
-      header_parts = header.strip().split(':', 2)
-      specification = header_parts[1].strip()
-
+    for specification in specifications:
       package_and_version = specification
       environment_marker = ''
       extra = ''

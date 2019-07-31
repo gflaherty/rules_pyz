@@ -27,16 +27,12 @@ _pyz_attrs = {
 
     "data": attr.label_list(
         allow_files = True,
-        cfg = "data",
+        cfg = "host",
     ),
 
     # this target's direct files must be unzipped to be executed. This is usually
     # because Python code relies on __file__ relative paths existing.
     "zip_safe": attr.bool(default = True),
-
-    # required so the rules can be used in third_party without error:
-    # third-party rule '//third_party/pypi:example' lacks a license declaration
-    "licenses": attr.license(),
 }
 
 def get_pythonroot(ctx):
@@ -240,7 +236,7 @@ def _pyz_binary_impl(ctx):
     )
 
     # by default: only build the executable script and runfiles tree
-    return [DefaultInfo(
+    return [provider, DefaultInfo(
         files=depset(direct=[ctx.outputs.executable]),
         runfiles=runfiles
     )]
@@ -322,9 +318,12 @@ def _pyz_script_test_impl(ctx):
         files=[ctx.outputs.executable],
         collect_data = True,
     )
-    return [DefaultInfo(
-        runfiles=runfiles
-    )]
+    return struct(
+        runfiles=runfiles,
+        instrumented_files=struct(
+            source_attrtibutes=["srcs"],
+            ),
+        )
 
 
 _pyz_script_test = rule(
@@ -339,16 +338,13 @@ _pyz_script_test = rule(
             default="//rules_python_zip:pytest_template.sh",
             allow_single_file=True,
         ),
-
-        # required so the pyz_test can be used in third_party without error
-        "licenses": attr.license(),
     }),
     executable = True,
     test = True,
 )
 
 def pyz_test(name, srcs=[], data=[], deps=[], pythonroot=None,
-    force_all_unzip=False, interpreter_path=None, flaky=None, licenses=[],
+    force_all_unzip=False, interpreter_path=None, flaky=None,
     local=None, timeout=None, shard_count=None, size=None, tags=[], args=[]):
     '''Macro that outputs a pyz_binary with all the test code and executes it with a shell script
     to pass the correct arguments.'''
@@ -363,7 +359,6 @@ def pyz_test(name, srcs=[], data=[], deps=[], pythonroot=None,
         deps = deps,
         pythonroot = pythonroot,
         testonly = True,
-        licenses = licenses,
     )
 
     test_executable_name = "%s_exe" % (name)
@@ -375,7 +370,6 @@ def pyz_test(name, srcs=[], data=[], deps=[], pythonroot=None,
         interpreter_path = interpreter_path,
         force_all_unzip = force_all_unzip,
         testonly = True,
-        licenses = licenses,
     )
 
     _pyz_script_test(
@@ -385,7 +379,6 @@ def pyz_test(name, srcs=[], data=[], deps=[], pythonroot=None,
         pythonroot = pythonroot,
         test_executable = test_executable_name,
         testonly = True,
-        licenses = licenses,
 
         flaky = flaky,
         local = local,

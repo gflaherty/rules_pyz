@@ -48,6 +48,9 @@ def main():
     manifest = json.loads(MANIFEST_JSON)
     if manifest['entry_point']:
         import runpy
+        if os.environ.get("BAZEL_COVERAGE", "0") == "1":
+            from tools.coverage import coverage_wrapper
+            coverage_wrapper.setup_coverage()
         # must use str to convert the entry point from unicode to str
         runpy.run_module(str(manifest['entry_point']), run_name='__main__')
         sys.exit(0)

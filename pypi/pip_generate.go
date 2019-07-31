@@ -102,8 +102,6 @@ func (w *wheelInfo) makeBazelRule(name *string, wheelDir *string) string {
 		output += fmt.Sprintf("    native.filegroup(\n")
 		output += fmt.Sprintf("        name=\"%s\",\n", *name)
 		output += fmt.Sprintf("        srcs=[\"%s\"],\n", path.Join(*wheelDir, filepath.Base(w.filePath)))
-		// Fixes build error TODO: different type? comment that this is not the right license?
-		output += fmt.Sprintf("        licenses=[\"notice\"],\n")
 		output += fmt.Sprintf("    )\n")
 	} else {
 		output += fmt.Sprintf("    if \"%s\" not in existing_rules:\n", *name)
@@ -556,8 +554,6 @@ func main() {
 			fmt.Fprintf(outputBzlFile, "        }),\n")
 		}
 
-		// Fixes build error TODO: different type? comment that this is not the right license?
-		fmt.Fprintf(outputBzlFile, "        licenses=[\"notice\"],\n")
 		fmt.Fprintf(outputBzlFile, "        visibility=[\"//visibility:public\"],\n")
 		fmt.Fprintf(outputBzlFile, "    )\n")
 
@@ -590,8 +586,6 @@ func main() {
 				fmt.Fprintf(outputBzlFile, "            \"%s\",\n", pyPIToBazelPackageName(dep))
 			}
 			fmt.Fprintf(outputBzlFile, "        ],\n")
-			// fmt.Fprintf(outputBzlFile, "        # Not the correct license but fixes a build error\n")
-			fmt.Fprintf(outputBzlFile, "        licenses=[\"notice\"],\n")
 			fmt.Fprintf(outputBzlFile, "        visibility=[\"//visibility:public\"],\n")
 			fmt.Fprintf(outputBzlFile, "    )\n")
 		}
